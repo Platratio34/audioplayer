@@ -1,0 +1,229 @@
+<html>
+
+<head>
+  <!-- Need to include jQuery! -->
+  <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.1/howler.min.js" type="text/javascript"></script>
+  <script>
+    // var audioPlayer = null;
+    // Listen for NUI Messages.
+    // var sourcePos = null;
+    // var volume = 1;
+
+    var sounds = {}
+    var nsid = 0
+    var cPos
+    var ePos = {}
+
+    function soundDisp(volume, dist) {
+      if (dist < 1) return volume
+      di = 20 * Math.log10(dist)
+      return Math.max(Math.min(Math.min(((volume + 1.6) / (di / 10)) - 1, volume), 1.0), 0.0)
+    }
+
+    function dist(p1, p2) {
+      dx = p2.x - p1.x
+      dy = p2.y - p1.y
+      dz = p2.z - p1.z
+      return Math.sqrt(dx * dx + dy * dy + dz * dz)
+    }
+
+    window.addEventListener('message', function (event) {
+      // Check for playSound transaction
+      if (event.data.type == "playSound") {
+
+        /*if (audioPlayer != null) {
+          audioPlayer.pause();
+        }*/
+
+        file = "./sounds/" + event.data.file
+        audioPlayer = new Howl({ src: [file] });
+        
+        sound = {
+          player: audioPlayer,
+          audio: event.data.file
+        }
+
+        if (event.data.sourcePos) {
+          sound.volume = event.data.volume
+          sound.sourcePos = event.data.sourcePos
+          audioPlayer.volume(soundDisp(sound.volume, dist(sound.sourcePos, event.data.pos)));
+        } else {
+          audioPlayer.volume(event.data.volume);
+        }
+        
+        audioPlayer.play();
+        sounds[nsid] = sound
+        console.log('Trying to play audio file ' + file + ' as sound #' + nsid)
+        nsid++;
+
+      } else if (event.data.type == 'updatePos') {
+        cPos = event.data.pos
+        ePos = event.data.ePos
+        Object.keys(sounds).forEach((sid) => {
+          sound = sounds[sid]
+          if(!sound) return
+          updateSound(sid, sound)
+          /*if(sound.player.state() != 'loaded') {
+            console.log('Skipping sound '+sound.audio+', not yet loaded')
+            return
+          }
+          if (!sound.player.playing()) {
+            if(!sound.keep && sound.player.seek() >= sound.player.duration()) {
+              console.log('Sound '+sid+'-'+sound.audio+' finished')
+              sounds[sid] = undefined
+              return
+            }
+            //console.log('Clearing finished sound '+sound.audio)
+            //sounds[sid] = undefined
+            return
+          }
+          if (sound.sourcePos) {
+            console.log('Updating volume for '+sound.audio)
+            d = dist(sound.sourcePos, cPos)
+            v = soundDisp(sound.volume, d)
+            sound.player.volume(v);
+          }*/
+        })
+      } else if (event.data.type == 'sound') {
+        // console.log('Received sound event')
+        // console.log(event.data)
+        act = event.data.action
+        id = event.data.id
+        if (act == 'start') {
+          if(sounds[id]) { // Sound with this ID already existed
+            sound = sounds[id]
+            if (sound.player.playing()) {
+              if (!event.data.override) {
+                console.log('Sound '+id+' was already playing')
+                return // Pass here because we are already playing it
+              } else {
+                sound.player.stop()
+              }
+            }
+            sound.player.play()
+          } else { // Sound with this ID did not yet exist
+            sound = {}
+            // foreach
+            Object.keys(event.data.sound).forEach((key) => {
+              sound[key.replace('_','')] = event.data.sound[key]
+            })
+            audioPlayer = new Howl({ src: ['sounds/'+sound.audio] });
+            sound.player = audioPlayer
+            if (sound.sourcePos) {
+              audioPlayer.volume(soundDisp(sound.volume, dist(sound.sourcePos, cPos)));
+            } else if(sound.sourceEntity) {
+              if(event.data.srcPos) {
+                audioPlayer.volume(soundDisp(sound.volume, dist(event.data.srcPos, cPos)));
+                ePos[id] = event.data.srcPos
+              } else {
+                audioPlayer.volume(0); // console.log('Sound '+id+' muted due to ot entity')
+              }
+            } else {
+              audioPlayer.volume(sound.volume);
+            }
+            
+            audioPlayer.play();
+            sounds[id] = sound
+            console.log('Adding sound '+id)
+            //  console.log(sound)
+          }
+        } else if (act == 'pause') {
+          if(!sounds[id]) {
+            return // Sound does not exist, so we can not pause it
+          }
+          sound = sounds[id]
+          sound.player.pause()
+          /*if(!sound.keep) {
+            sounds[id] = undefined
+          }*/
+        } else if (act == 'stop') {
+          if(!sounds[id]) {
+            return // Sound does not exist, so we can not stop it
+          }
+          sound = sounds[id]
+          sound.player.stop()
+          if(!sound.keep) {
+            console.log('On stop: Cleaning up sound '+id+'-'+sound.audio)
+            sounds[id] = undefined
+          }
+        } else if (act == 'update') {
+          if(!sounds[id]) { // If sound does not yet exist, create it now
+            sound = {}
+            Object.keys(event.data.sound).forEach((key) => {
+              sound[key.replace('_','')] = event.data.sound[key]
+            })
+            audioPlayer = new Howl({ src: ['sounds/'+sound.audio] });
+            sound.player = audioPlayer
+            if (sound.sourcePos) {
+              audioPlayer.volume(soundDisp(sound.volume, dist(sound.sourcePos, cPos)));
+            } else if(sound.sourceEntity) {
+              if(event.data.srcPos) {
+                audioPlayer.volume(soundDisp(sound.volume, dist(event.data.srcPos, cPos)));
+                ePos[id] = event.data.srcPos
+              } else {
+                audioPlayer.volume(0); // console.log('Sound '+id+' muted due to ot entity')
+              }
+            } else {
+              audioPlayer.volume(sound.volume);
+            }
+            sounds[id] = sound
+            console.log('Adding sound '+id)
+            // console.log(sound)
+            // console.log(sounds[id])
+            return
+          }
+          console.log()
+          eSound = event.data.sound
+          sound = sounds[id]
+          sound.sourcePos = eSound._sourcePos
+          sound.volume = eSound._volume
+          sound.keep = eSound._keep
+          updateSound(id, sound)
+        } else if (act == 'cleanup') {
+          if (!sounds[id]) {
+            return
+          }
+          if (sounds[id].player.playing()) {
+            sounds[id].player.stop()
+          }
+          console.log('On request: Cleaning up sound '+id+'-'+sound.audio)
+          sounds[id] = undefined
+        }
+      }
+    });
+
+    function updateSound(id, sound) {
+      if(sound.player.state() != 'loaded') {
+        // console.log('Skipping sound '+sound.audio+', not yet loaded')
+        return
+      }
+      if (!sound.player.playing()) {
+        if(!sound.keep && sound.player.seek() >= sound.player.duration()) {
+          console.log('Cleaning up sound '+id+'-'+sound.audio)
+          sounds[id] = undefined
+          return
+        }
+        return
+      }
+      if (sound.sourcePos) {
+        // console.log('Updating volume for '+sound.audio)
+        d = dist(sound.sourcePos, cPos)
+        v = soundDisp(sound.volume, d)
+        sound.player.volume(v);
+      } else if(sound.sourceEntity > 0) {
+        if(ePos[id]) {
+          d = dist(ePos[id], cPos)
+          v = soundDisp(sound.volume, d)
+          sound.player.volume(v);
+        } else {
+          sound.player.volume(0); // console.log('Sound '+id+' muted due to not entity')
+        }
+      } else {
+        sound.player.volume(sound.volume)
+      }
+    }
+  </script>
+</head>
+
+</html>
