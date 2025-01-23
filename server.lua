@@ -43,7 +43,7 @@ exports('playAudioFor', playAudioOther)
 local nextServerId = 1
 
 local function getServerSoundId()
-    id = nextServerId
+    local id = nextServerId
     nextServerId = nextServerId + 1
     return 'sv:' .. id
 end
@@ -51,7 +51,7 @@ exports('getServerSoundId', getServerSoundId)
 
 local sounds = {} ---@type { string: Sound }
 exports('createSound', function(audio, volume, sourcePos, keep)
-    sound = Sound(audio, volume, sourcePos, keep)
+    local sound = Sound(audio, volume, sourcePos, keep)
     sounds[sound:getId()] = sound
     return sound:getId()
 end)

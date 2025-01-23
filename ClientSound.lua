@@ -11,7 +11,7 @@ local ClientSoundMeta = {
     __index = ClientSoundIndex
 }
 
----Initilize the Client Sound
+---Initialize the Client Sound
 ---@param audio string Sound file name and path
 ---@param volume number Sound volume (0-1)
 ---@param keep boolean|nil Optional. Keep sound after finished playing
@@ -75,7 +75,7 @@ function ClientSoundIndex:setKeep(keep)
     self._keep = keep
     self:update()
 end
----Get if the sound will be keept when done playing
+---Get if the sound will be kept when done playing
 ---@return boolean keep
 function ClientSoundIndex:getKeep()
     return self._keep

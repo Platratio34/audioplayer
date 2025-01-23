@@ -15,7 +15,7 @@ RegisterNetEvent('audioPlayer:playAudio', playAudio)
 local distToHalf = 20
 local function soundDisp(volume, dist)
     if dist < 1 then return volume end
-    di = 20 * math.log(dist, 10)
+    local di = 20 * math.log(dist, 10)
     return math.min(volume / ( di / 5 ), volume)
     -- return volume / ( (distToHalf / dist) + 1)
 end
@@ -53,10 +53,10 @@ local trackedEntities = {}
 
 Citizen.CreateThread(function()
     while true do
-        ePos = {}
+        local ePos = {}
         for id,ent in pairs(trackedEntities) do
             if NetworkDoesEntityExistWithNetworkId(ent) then
-                lid = NetworkGetEntityFromNetworkId(ent)
+                local lid = NetworkGetEntityFromNetworkId(ent)
                 ePos[id] = GetEntityCoords(lid)
             end
         end
@@ -73,18 +73,18 @@ end)
 local nextClientId = 1
 
 local function getClientSoundId()
-    id = nextClientId
+    local id = nextClientId
     nextClientId = nextClientId + 1
     return 'cl:' .. id
 end
 exports('getClientSoundId', getClientSoundId)
 
 RegisterNetEvent('audioPlayer:sound:start', function(id, sound, override)
-    srcPos = nil
+    local srcPos = nil
     if sound._sourceEntity > 0 then
         trackedEntities[id] = sound._sourceEntity
         if NetworkDoesEntityExistWithNetworkId(sound._sourceEntity) then
-            lid = NetworkGetEntityFromNetworkId(sound._sourceEntity)
+            local lid = NetworkGetEntityFromNetworkId(sound._sourceEntity)
             srcPos = GetEntityCoords(lid)
         end
     else
@@ -114,11 +114,11 @@ RegisterNetEvent('audioPlayer:sound:stop', function(id)
     })
 end)
 RegisterNetEvent('audioPlayer:sound:update', function(id, sound)
-    srcPos = nil
+    local srcPos = nil
     if sound._sourceEntity > 0 then
         trackedEntities[id] = sound._sourceEntity
         if NetworkDoesEntityExistWithNetworkId(sound._sourceEntity) then
-            lid = NetworkGetEntityFromNetworkId(sound._sourceEntity)
+            local lid = NetworkGetEntityFromNetworkId(sound._sourceEntity)
             srcPos = GetEntityCoords(lid)
         end
     else

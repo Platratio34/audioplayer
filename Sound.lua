@@ -16,10 +16,10 @@ local SoundMeta = {
     __index = SoundIndex
 }
 
----Initilizes the sound
+---Initializes the sound
 ---@param audio string Sound file name and path
 ---@param volume number Sound base volume (0-1 for regular, 0-1+ for positional)
----@param source vector3|number|nil Optional. Source for positional audio can be position or entity netowork id
+---@param source vector3|number|nil Optional. Source for positional audio can be position or entity network id
 ---@param keep boolean|nil Optional. Keep sound after finished playing
 function SoundIndex:__init(audio, volume, source, keep)
     self._audio = audio
@@ -72,8 +72,8 @@ function SoundIndex:removeAllClients()
 end
 
 ---Send a message to all clients of this sound
----@param action string Action (appendind to default event type)
----@param ... any Action parrameters
+---@param action string Action (appended to default event type)
+---@param ... any Action parameters
 function SoundIndex:__sendToClients(action, ...)
     for cl,_ in pairs(self._clients) do
         TriggerClientEvent('audioPlayer:sound:'..action, cl, self._id, ...)
@@ -140,7 +140,7 @@ function SoundIndex:setKeep(keep)
     self._keep = keep
     self:update()
 end
----Get if the sound will be keept when done playing
+---Get if the sound will be kept when done playing
 ---@return boolean keep
 function SoundIndex:getKeep()
     return self._keep
